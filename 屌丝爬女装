@@ -1,0 +1,96 @@
+# 导入爬虫库
+import urllib.request
+# 导入文件路径处理库
+import os
+# 导入xpath库，用于分析网页
+from lxml import etree
+# 导入时间库
+import time
+# 谷歌无界面模式操作
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+
+
+# 使用无界浏览器获取网页
+def getUrl(url):
+    # 创建一个参数对象
+    chrome_options = Options()
+    # 将浏览器设置成不提供可视化模式
+    chrome_options.add_argument('--headless')
+    # Chrome文档需加上这个，规避bug
+    chrome_options.add_argument('--disable-gpu')
+    # 驱动路径，即使谷歌浏览器操作无界面的软件路径
+    path = r'C:\Program Files (x86)\Google\Chrome\Application\chromedriver.exe'
+    # 创建一个浏览器对象
+    browser = webdriver.Chrome(executable_path=path, chrome_options=chrome_options)
+    # 使用浏览器对象上网
+    # 发出请求
+    browser.get(url)
+    # 将页面滚动条滑到底部
+    browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    # 停留三秒
+    time.sleep(3)
+    # 获取网页源代码
+    req = browser.page_source
+    # 退出浏览器
+    browser.quit()
+    # 返回网页源代码
+    return req
+
+
+# 分析分析源代码，获取图片地址
+def getImageUrl(req):
+    tree = etree.HTML(req)
+    # 匹配图片地址为src的部分
+    a = tree.xpath('//div[@style="position: relative"]/img/@src')
+    # 匹配图片地址为original的部分
+    c = tree.xpath('//div[@style="position: relative"]/img/@original')
+    # 合并两个图片地址列表
+    imageUrl = a + c
+    return imageUrl
+
+
+
+
+# 下载图片到本地
+def loadImg(imageUrl, path):
+    urllib.request.urlretrieve("https:"+imageUrl, filename=path)
+
+
+
+
+# 定义主函数
+def main():
+    num = 1
+    # 设置爬取页数
+    page = input("请输入你要爬取的页数：")
+    for i in range(eval(page)):
+        url = r"https://search.yhd.com/c11986-0-0/mbname-b/a-s1-v4-p1-price-d0-f0-m1-rt0-pid-mid0-color-size-k%E5%A5%B3%E8%A3%85/#page={}&sort=1".format(i)
+        # 获取网页源代码
+        req = getUrl(url)
+        # 分析网页,得到图片下载地址
+        imageList = getImageUrl(req)
+        # 下载图片并保存
+        toPath = r"C:\Users\lkx\Desktop\屌丝爬女装"
+        for imageUrl in imageList:
+            # 设置图片保存路径
+            path = os.path.join(toPath, str(num)+".jpg")
+            loadImg(imageUrl, path)
+            num += 1
+
+
+
+
+if __name__ == '__main__':
+    main()
+
+
+
+
+
+
+
+
+
+
+
